@@ -1,21 +1,8 @@
 #!/usr/bin/sh
 
-# Requires:
-# 	-> module load ScoreP_lite/3.0_gcc TAU_lite/2.26.1_gcc CUBE/4.3.4_gcc
-
 set -e
 
-#tau_dir=/lustre/software/TAU_lite/2.26.1_gcc/x86_64/lib/bindings-python-scorep/
-
-#export LD_LIBRARY_PATH="$tau_dir:$LD_LIBRARY_PATH"
-
-#export PYTHONPATH="$tau_dir:$PYTHONPATH"
-
-export SCOREP_DIR=$(realpath "$(dirname $(which scorep-config))/../")
-
 LIBTOOL="/usr/bin/libtool --silent"
-
-CC=gcc
 
 INSTALL=/usr/bin/install
 
@@ -29,7 +16,7 @@ print_help()
 Usage
 =====
 1. Build the Score-P preload:
-> $0 build --mpp=<none|mpi|shmem> /path/to/application
+> $0 build /path/to/application <scorep-options>
 
 2. Get the preload for the Score-P libraries
 > $0 print /path/to/application
@@ -53,18 +40,18 @@ build()
 		exit -1
         fi
 
-	scorep_preload_dir=$(realpath $3/$scorep_preload_dir)
+	scorep_preload_dir=$(realpath $2/$scorep_preload_dir)
 
 	if [ -d "$scorep_preload_dir" ]; then
 	    	echo "Preload folder already exists!"
 	    	echo "For re-building, delete the $scorep_preload_dir folder"
 		exit -1
 	fi
-	
+
 	mkdir -p "$scorep_preload_dir"
 
-	scorep_init_options="$2 --user --nocompiler"
-
+	scorep_init_options="${@:3}"
+	echo $scorep_init_options
 	echo "$scorep_init_options" > "$scorep_preload_dir/scorep_init_options.conf"
 
 	scorep_tmp="$(mktemp -d -t scorep_preload.XXXXXXXXXX)"
@@ -106,10 +93,10 @@ print_preload()
 		echo "Wrong number of arguments."
 		print_help
 		exit -1
-	fi	
+	fi
 
 	scorep_preload_dir=$(realpath $2/$scorep_preload_dir)
-	
+
 	if [ ! -d "$scorep_preload_dir" ] || [ ! -f "$scorep_preload_dir/scorep_init_options.conf" ]; then
 		echo "No Score-P preload folder found in $2"
 	        print_help
@@ -125,6 +112,12 @@ print_preload()
 	done
 	echo "$preload_str"
 }
+
+command -v scorep-config >/dev/null 2>&1 || \
+	 { echo "SCORE-P has to be installed on your system. Aborting..."; exit 1; }
+
+export SCOREP_DIR=$(realpath "$(dirname $(which scorep-config))/../")
+export CC=$(scorep-config --cc)
 
 if [ "$1" == "build" ]; then
     build "$@"
