@@ -51,7 +51,7 @@ build()
 	mkdir -p "$scorep_preload_dir"
 
 	scorep_init_options="${@:3}"
-	echo $scorep_init_options
+        
 	echo "$scorep_init_options" > "$scorep_preload_dir/scorep_init_options.conf"
 
 	scorep_tmp="$(mktemp -d -t scorep_preload.XXXXXXXXXX)"
